@@ -2,6 +2,7 @@ package com.tistory.jaimemin.springbatch;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -12,32 +13,45 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Deprecated
-@RequiredArgsConstructor
+import java.util.Map;
+
 @Configuration
-public class HelloJobConfiguration {
+@RequiredArgsConstructor
+public class JobParameterConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
 
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("helloJob")
-                .start(helloStep())
-                .next(helloStep2())
+    public Job job() {
+        return jobBuilderFactory.get("job")
+                .start(step1())
+                .next(step2())
                 .build();
     }
 
-    @Bean
-    public Step helloStep() {
-        return stepBuilderFactory.get("helloStep")
+    public Step step2() {
+        return stepBuilderFactory.get("step1")
                 .tasklet(new Tasklet() {
                     @Override
                     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-                        System.out.println(" ======================== ");
-                        System.out.println(" >> Hello Spring Batch!!");
-                        System.out.println(" ======================== ");
+                        // 실제 저장된 parameter
+                        JobParameters jobParameters = stepContribution
+                                .getStepExecution()
+                                .getJobExecution()
+                                .getJobParameters();
+                        System.out.println("name: " + jobParameters.getString("name"));
+                        System.out.println("seq: " + jobParameters.getLong("seq"));
+                        System.out.println("date: " + jobParameters.getDate("date"));
+                        System.out.println("age: " + jobParameters.getDouble("age"));
+
+                        // 값만 확인하는 용도
+                        Map<String, Object> jobParameters2 = chunkContext
+                                .getStepContext()
+                                .getJobParameters();
+
+                        System.out.println("step2 was executed");
 
                         return RepeatStatus.FINISHED;
                     }
@@ -45,15 +59,12 @@ public class HelloJobConfiguration {
                 .build();
     }
 
-    @Bean
-    public Step helloStep2() {
-        return stepBuilderFactory.get("helloStep2")
+    public Step step1() {
+        return stepBuilderFactory.get("step1")
                 .tasklet(new Tasklet() {
                     @Override
                     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-                        System.out.println(" ======================== ");
-                        System.out.println(" >> step2 was executed");
-                        System.out.println(" ======================== ");
+                        System.out.println("step1 was executed");
 
                         return RepeatStatus.FINISHED;
                     }
@@ -61,3 +72,4 @@ public class HelloJobConfiguration {
                 .build();
     }
 }
+
