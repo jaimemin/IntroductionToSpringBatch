@@ -2,7 +2,6 @@ package com.tistory.jaimemin.springbatch;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -15,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 
 @RequiredArgsConstructor
 @Configuration
-public class StepConfiguration {
+public class StepExecutionConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -26,15 +25,24 @@ public class StepConfiguration {
         return this.jobBuilderFactory.get("Job")
                 .start(step1())
                 .next(step2())
+                // .next(step3())
                 .build();
     }
 
     @Bean
     public Step step1() {
         return stepBuilderFactory.get("step1")
-                .tasklet(new CustomTasklet())
+                .tasklet(new Tasklet() {
+                    @Override
+                    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+                        System.out.println("step1 has executed");
+
+                        return RepeatStatus.FINISHED;
+                    }
+                })
                 .build();
     }
+
     @Bean
     public Step step2() {
         return stepBuilderFactory.get("step2")
@@ -45,4 +53,25 @@ public class StepConfiguration {
                 })
                 .build();
     }
+
+//    @Bean
+//    public Step step1() {
+//        return stepBuilderFactory.get("step1")
+//                .tasklet(new ExecutionContextTasklet())
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step step2() {
+//        return stepBuilderFactory.get("step2")
+//                .tasklet(new ExecutionContextTasklet2())
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step step3() {
+//        return stepBuilderFactory.get("step3")
+//                .tasklet(new ExecutionContextTasklet3())
+//                .build();
+//    }
 }
