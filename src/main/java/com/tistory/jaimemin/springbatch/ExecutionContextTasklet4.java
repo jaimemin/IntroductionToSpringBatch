@@ -7,7 +7,7 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ExecutionContextTasklet3 implements Tasklet {
+public class ExecutionContextTasklet4 implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -17,17 +17,8 @@ public class ExecutionContextTasklet3 implements Tasklet {
                 .getExecutionContext()
                 .get("name");
 
-        if (name == null) {
-            chunkContext.getStepContext()
-                    .getStepExecution()
-                    .getJobExecution()
-                    .getExecutionContext()
-                    .put("name", "user1");
-
-            throw new RuntimeException("step3 failed");
-        }
-
-        System.out.println("step3 was executed");
+        System.out.println("name : " + name);
+        System.out.println("step4 was executed");
 
         return RepeatStatus.FINISHED;
     }

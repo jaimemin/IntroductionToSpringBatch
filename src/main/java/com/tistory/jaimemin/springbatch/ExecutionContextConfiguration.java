@@ -14,64 +14,55 @@ import org.springframework.context.annotation.Configuration;
 
 @RequiredArgsConstructor
 @Configuration
-public class StepExecutionConfiguration {
+public class ExecutionContextConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
+
+    private final ExecutionContextTasklet executionContextTasklet;
+
+    private final ExecutionContextTasklet2 executionContextTasklet2;
+
+    private final ExecutionContextTasklet3 executionContextTasklet3;
+
+    private final ExecutionContextTasklet4 executionContextTasklet4;
 
     @Bean
     public Job BatchJob() {
         return this.jobBuilderFactory.get("Job")
                 .start(step1())
                 .next(step2())
-                // .next(step3())
+                .next(step3())
+                .next(step4())
                 .build();
     }
 
     @Bean
     public Step step1() {
         return stepBuilderFactory.get("step1")
-                .tasklet(new Tasklet() {
-                    @Override
-                    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-                        System.out.println("step1 has executed");
-
-                        return RepeatStatus.FINISHED;
-                    }
-                })
+                .tasklet(executionContextTasklet)
                 .build();
     }
 
     @Bean
     public Step step2() {
         return stepBuilderFactory.get("step2")
-                .tasklet((contribution, chunkContext) -> {
-                    System.out.println("step2 has executed");
-
-                    return RepeatStatus.FINISHED;
-                })
+                .tasklet(executionContextTasklet2)
                 .build();
     }
 
-//    @Bean
-//    public Step step1() {
-//        return stepBuilderFactory.get("step1")
-//                .tasklet(new ExecutionContextTasklet())
-//                .build();
-//    }
-//
-//    @Bean
-//    public Step step2() {
-//        return stepBuilderFactory.get("step2")
-//                .tasklet(new ExecutionContextTasklet2())
-//                .build();
-//    }
-//
-//    @Bean
-//    public Step step3() {
-//        return stepBuilderFactory.get("step3")
-//                .tasklet(new ExecutionContextTasklet3())
-//                .build();
-//    }
+    @Bean
+    public Step step3() {
+        return stepBuilderFactory.get("step3")
+                .tasklet(executionContextTasklet3)
+                .build();
+    }
+
+    @Bean
+    public Step step4() {
+        return stepBuilderFactory.get("step4")
+                .tasklet(executionContextTasklet4)
+                .build();
+    }
 }
