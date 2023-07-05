@@ -12,24 +12,20 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 @Configuration
 @RequiredArgsConstructor
-public class JobRepositoryConfiguration {
+public class JobLauncherConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
 
-    private final JobExecutionListener jobExecutionListener;
-
     @Bean
     public Job batchJob() {
-        return this.jobBuilderFactory.get("batchJob")
+        return this.jobBuilderFactory.get("job")
                 .start(step())
                 .next(step2())
-                .listener(jobExecutionListener)
                 .build();
     }
 
@@ -39,6 +35,8 @@ public class JobRepositoryConfiguration {
                 .tasklet(new Tasklet() {
                     @Override
                     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+                        Thread.sleep(3000);
+
                         return RepeatStatus.FINISHED;
                     }
                 })
