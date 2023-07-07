@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @RequiredArgsConstructor
-public class TransitionConfiguration {
+public class CustomExitStatusConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -29,16 +29,9 @@ public class TransitionConfiguration {
                 .start(step1())
                     .on("FAILED")
                     .to(step2())
-                    .on("FAILED")
+                    .on("PASS")
                     .stop()
-                .from(step1())
-                    .on("*")
-                    .to(step3())
-                    .next(step4())
-                .from(step2())
-                    .on("*")
-                    .to(step5())
-                    .end()
+                .end()
                 .build();
     }
 
@@ -65,42 +58,8 @@ public class TransitionConfiguration {
                         return RepeatStatus.FINISHED;
                     }
                 })
+                .listener(new PassCheckingListener())
                 .build();
     }
 
-    @Bean
-    public Step step3() {
-        return stepBuilderFactory.get("step3")
-                .tasklet(new Tasklet() {
-                    @Override
-                    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-                        return RepeatStatus.FINISHED;
-                    }
-                })
-                .build();
-    }
-
-    @Bean
-    public Step step4() {
-        return stepBuilderFactory.get("step4")
-                .tasklet(new Tasklet() {
-                    @Override
-                    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-                        return RepeatStatus.FINISHED;
-                    }
-                })
-                .build();
-    }
-
-    @Bean
-    public Step step5() {
-        return stepBuilderFactory.get("step5")
-                .tasklet(new Tasklet() {
-                    @Override
-                    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-                        return RepeatStatus.FINISHED;
-                    }
-                })
-                .build();
-    }
 }
