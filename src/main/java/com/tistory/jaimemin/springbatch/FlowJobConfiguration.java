@@ -14,45 +14,26 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @RequiredArgsConstructor
-public class JobStepConfiguration {
+public class FlowJobConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
 
+    /**
+     * step1 성공 시 step3
+     * step1 실패 시 step2
+     *
+     * @return
+     */
     @Bean
     public Job parentJob() {
-        return this.jobBuilderFactory.get("parentJob")
-                .start(jobStep(null))
-                .next(step2())
-                .build();
-    }
-
-    @Bean
-    public Step jobStep(JobLauncher jobLauncher) {
-        return stepBuilderFactory.get("jobStep")
-                .job(childJob())
-                .launcher(jobLauncher)
-                .parametersExtractor(jobParametersExtractor())
-                .listener(new StepExecutionListener() {
-
-                    @Override
-                    public void beforeStep(StepExecution stepExecution) {
-                        stepExecution.getExecutionContext().putString("name", "user1");
-                    }
-
-                    @Override
-                    public ExitStatus afterStep(StepExecution stepExecution) {
-                        return null;
-                    }
-                })
-                .build();
-    }
-
-    @Bean
-    public Job childJob() {
-        return jobBuilderFactory.get("childJob")
+        return this.jobBuilderFactory.get("batchJob")
                 .start(step1())
+                .on("COMPLETED").to(step3())
+                .from(step1())
+                .on("FAILED").to(step2())
+                .end()
                 .build();
     }
 
@@ -80,10 +61,15 @@ public class JobStepConfiguration {
                 .build();
     }
 
-    private DefaultJobParametersExtractor jobParametersExtractor() {
-        DefaultJobParametersExtractor extractor = new DefaultJobParametersExtractor();
-        extractor.setKeys(new String[]{"name"});
-
-        return extractor;
+    @Bean
+    public Step step3() {
+        return stepBuilderFactory.get("step3")
+                .tasklet(new Tasklet() {
+                    @Override
+                    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+                        return RepeatStatus.FINISHED;
+                    }
+                })
+                .build();
     }
 }
