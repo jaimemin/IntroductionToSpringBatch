@@ -11,11 +11,13 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-public class ItemReader_ItemProcessor_ItemWriter_Configuration {
+public class ItemStreamConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -32,28 +34,25 @@ public class ItemReader_ItemProcessor_ItemWriter_Configuration {
     @Bean
     public Step step() {
         return stepBuilderFactory.get("step")
-                .<Customer, Customer>chunk(3)
+                .<String, String>chunk(5)
                 .reader(itemReader())
-                .processor(itemProcessor())
                 .writer(itemWriter())
                 .build();
     }
 
     @Bean
-    public ItemWriter<? super Customer> itemWriter() {
+    public ItemWriter<? super String> itemWriter() {
         return new CustomItemWriter();
     }
-
     @Bean
-    public ItemProcessor<? super Customer, ? extends Customer> itemProcessor() {
-        return new CustomItemProcessor();
-    }
+    public CustomItemStreamReader itemReader() {
+        List<String> items = new ArrayList<>(10);
 
-    @Bean
-    public ItemReader<Customer> itemReader() {
-        return new CustomItemReader(Arrays.asList(new Customer("user1")
-                , new Customer("user2")
-                , new Customer("user3")));
+        for (int i = 0; i < 10; i++) {
+            items.add(String.valueOf(i));
+        }
+
+        return new CustomItemStreamReader(items);
     }
 
     @Bean
