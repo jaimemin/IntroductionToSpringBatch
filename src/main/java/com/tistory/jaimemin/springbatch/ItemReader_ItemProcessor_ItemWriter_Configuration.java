@@ -5,7 +5,8 @@ import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.support.ListItemReader;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,7 @@ import java.util.Arrays;
 
 @Configuration
 @RequiredArgsConstructor
-public class ChunkConfiguration {
+public class ItemReader_ItemProcessor_ItemWriter_Configuration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -31,20 +32,28 @@ public class ChunkConfiguration {
     @Bean
     public Step step() {
         return stepBuilderFactory.get("step")
-                .<String, String>chunk(5)
-                .reader(new ListItemReader<>(Arrays.asList("item1", "item2", "item3", "item4", "item5")))
-                .processor((ItemProcessor<String, String>) item -> {
-                    Thread.sleep(3000);
-                    System.out.println("original item = " + item);
-
-                    return "my" + item;
-                })
-                .writer(items -> {
-                    Thread.sleep(3000);
-
-                    System.out.println("items = " + items);
-                })
+                .<Customer, Customer>chunk(3)
+                .reader(itemReader())
+                .processor(itemProcessor())
+                .writer(itemWriter())
                 .build();
+    }
+
+    @Bean
+    public ItemWriter<? super Customer> itemWriter() {
+        return new CustomItemWriter();
+    }
+
+    @Bean
+    public ItemProcessor<? super Customer, ? extends Customer> itemProcessor() {
+        return new CustomItemProcessor();
+    }
+
+    @Bean
+    public ItemReader<Customer> itemReader() {
+        return new CustomItemReader(Arrays.asList(new Customer("user1")
+                , new Customer("user2")
+                , new Customer("user3")));
     }
 
     @Bean
