@@ -19,7 +19,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-public class FlatFilesFixedLengthConfiguration {
+public class ExceptionHandlingConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -56,6 +56,7 @@ public class FlatFilesFixedLengthConfiguration {
                 .targetType(Customer.class)
                 .linesToSkip(1) // title 제외
                 .fixedLength()
+                .strict(false) // customer.txt 내 라인이 11자가 아니고 strict가 true라면 IncorrectLineLengthException 발생
                 .addColumns(new Range(1, 5))
                 .addColumns(new Range(6, 9))
                 .addColumns(new Range(10, 11))
