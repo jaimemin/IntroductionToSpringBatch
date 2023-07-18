@@ -11,3 +11,5 @@ TaskletStep 아키텍처: https://jaimemin.tistory.com/2301
 FlowJob 아키텍처: https://jaimemin.tistory.com/2302
 
 SimpleFlow 아키텍처: https://jaimemin.tistory.com/2303
+
+@JobScope/@StepScope: https://jaimemin.tistory.com/2304
