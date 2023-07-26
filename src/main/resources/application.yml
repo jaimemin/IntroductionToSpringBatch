@@ -30,3 +30,6 @@ spring:
       initialize-schema: always
     job:
       names: ${job.name:NONE}
+
+server:
+  port: 9999
