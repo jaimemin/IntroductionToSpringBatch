@@ -1,16 +1,15 @@
 package com.tistory.jaimemin.springbatch;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 public class Customer {
 
     private Long id;
 
-    private String name;
+    private String firstName;
 
-    private Integer age;
+    private String lastName;
 
+    private String birthdate;
 }
