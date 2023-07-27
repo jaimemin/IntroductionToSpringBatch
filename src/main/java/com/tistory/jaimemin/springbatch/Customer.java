@@ -6,18 +6,16 @@ import javax.persistence.*;
 
 @Data
 @Entity
-@Table(name = "customer")
 public class Customer {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @Column(name = "firstName")
-    private String firstName;
+    private String username;
 
-    @Column(name = "lastName")
-    private String lastName;
+    private int age;
 
-    private String birthdate;
+    @OneToOne(mappedBy = "customer", fetch = FetchType.LAZY)
+    private Address address;
 }

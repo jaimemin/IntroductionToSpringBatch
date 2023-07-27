@@ -10,22 +10,17 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.Order;
 import org.springframework.batch.item.database.PagingQueryProvider;
 import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
-import org.springframework.batch.item.database.builder.JpaCursorItemReaderBuilder;
+import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 import javax.persistence.EntityManagerFactory;
-import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
-public class JdbcPagingConfiguration {
-
-    private final DataSource dataSource;
+public class JpaPagingConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -50,41 +45,20 @@ public class JdbcPagingConfiguration {
                 .build();
     }
 
-    @Bean
-    public ItemReader<? extends Customer> customItemReader() throws Exception {
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("firstName", "A%");
-
-        return new JdbcPagingItemReaderBuilder<Customer>()
-                .name("jdbcPagingReader")
+    private ItemReader<? extends Customer> customItemReader() {
+        return new JpaPagingItemReaderBuilder<Customer>()
+                .name("jpaPagingItemReader")
+                .entityManagerFactory(entityManagerFactory)
                 .pageSize(10)
-                .dataSource(dataSource)
-                .rowMapper(new BeanPropertyRowMapper<>(Customer.class))
-                .queryProvider(createQueryProvider())
-                .parameterValues(parameters)
+                .queryString("SELECT c FROM Customer c FETCH c.address")
                 .build();
-    }
-
-    @Bean
-    public PagingQueryProvider createQueryProvider() throws Exception {
-        SqlPagingQueryProviderFactoryBean queryProvider = new SqlPagingQueryProviderFactoryBean();
-        queryProvider.setDataSource(dataSource);
-        queryProvider.setSelectClause("id, firstName, lastName, birthdate");
-        queryProvider.setFromClause("FROM customer");
-        queryProvider.setWhereClause("WHERE firstName LIKE :firstName");
-
-        Map<String, Order> sortKeys = new HashMap<>();
-        sortKeys.put("id", Order.ASCENDING);
-        queryProvider.setSortKeys(sortKeys);
-
-        return queryProvider.getObject();
     }
 
     @Bean
     public ItemWriter<Customer> customItemWriter() {
         return items -> {
             for (Customer item : items) {
-                System.out.println(item.toString());
+                System.out.println(item.getAddress().getLocation());
             }
         };
     }
