@@ -8,14 +8,12 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
 import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 
-import javax.persistence.EntityManagerFactory;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,8 +24,6 @@ public class FlatFilesDelimitedConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
 
     private final StepBuilderFactory stepBuilderFactory;
-
-    private final EntityManagerFactory entityManagerFactory;
 
     @Bean
     public Job batchJob() throws Exception {
@@ -40,7 +36,7 @@ public class FlatFilesDelimitedConfiguration {
     @Bean
     public Step step() throws Exception {
         return stepBuilderFactory.get("step")
-                .<Customer , Customer >chunk(10)
+                .<Customer , Customer>chunk(10)
                 .reader(customItemReader())
                 .writer(customItemWriter())
                 .build();
@@ -51,21 +47,19 @@ public class FlatFilesDelimitedConfiguration {
         return new FlatFileItemWriterBuilder<Customer>()
                 .name("flatFileWriter")
                 .resource(new FileSystemResource("C:\\Users\\USER\\IdeaProjects\\IntroductionToSpringBatch\\src\\main\\resources\\customer.txt"))
-                .delimited()
-                .delimiter("|")
+                .formatted()
+                .format("%-2d%-15s%-2d")
                 .names(new String[]{"id", "name", "age"})
                 .build();
     }
 
     @Bean
     public ItemReader<? extends Customer> customItemReader() {
-        List<Customer> customers = Arrays.asList(new Customer(1L, "hong gil dong", 41)
+        List<Customer> customers = Arrays.asList(new Customer(1L, "hong gil dong1", 41)
                 , new Customer(2L, "hong gil dong2", 42)
                 , new Customer(3L, "hong gil dong3", 43));
 
-        ListItemReader<Customer> reader = new ListItemReader<>(customers);
-
-        return reader;
+        return new ListItemReader<>(customers);
     }
 
 
