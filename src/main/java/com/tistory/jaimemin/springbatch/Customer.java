@@ -1,21 +1,16 @@
 package com.tistory.jaimemin.springbatch;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import javax.persistence.*;
-
 @Data
-@Entity
+@AllArgsConstructor
 public class Customer {
 
-    @Id
-    @GeneratedValue
     private Long id;
 
-    private String username;
+    private String name;
 
     private int age;
 
-    @OneToOne(mappedBy = "customer", fetch = FetchType.LAZY)
-    private Address address;
 }
