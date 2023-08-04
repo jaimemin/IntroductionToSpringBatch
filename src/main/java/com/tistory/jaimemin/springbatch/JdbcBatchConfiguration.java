@@ -10,6 +10,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
 import org.springframework.batch.item.database.Order;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.database.support.MySqlPagingQueryProvider;
 import org.springframework.batch.item.xml.builder.StaxEventItemWriterBuilder;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +25,7 @@ import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
-public class XMLConfiguration {
+public class JdbcBatchConfiguration {
 
     private final DataSource dataSource;
 
@@ -59,7 +60,7 @@ public class XMLConfiguration {
         MySqlPagingQueryProvider queryProvider = new MySqlPagingQueryProvider();
         queryProvider.setSelectClause("id, firstName, lastName, birthdate");
         queryProvider.setFromClause("from customer");
-        queryProvider.setWhereClause("where firstname like :firstname");
+        // queryProvider.setWhereClause("where firstname like :firstname");
 
         Map<String, Order> sortKeys = new HashMap<>(1);
         sortKeys.put("id", Order.ASCENDING);
@@ -68,34 +69,18 @@ public class XMLConfiguration {
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("firstname", "A%");
-        reader.setParameterValues(parameters);
+        // reader.setParameterValues(parameters);
 
         return reader;
     }
 
     @Bean
     public ItemWriter<? super Customer> customItemWriter() {
-        return new StaxEventItemWriterBuilder<Customer>()
-                .name("staxEventWriter")
-                .marshaller(itemMarshaller())
-                .resource(new FileSystemResource("/Users/jaimemin/IdeaProjects/IntroductionToSpringBatch/src/main/resources/customer.xml"))
-                .rootTagName("customer")
+        return new JdbcBatchItemWriterBuilder<Customer>()
+                .dataSource(dataSource)
+                .sql("INSERT INTO customer2 VALUES (:id, :firstName, :lastName, :birthdate)")
+                .beanMapped()
                 .build();
-    }
-
-    @Bean
-    public Marshaller itemMarshaller() {
-        Map<String, Class<?>> aliases = new HashMap<>();
-        aliases.put("customer", Customer.class);
-        aliases.put("id", Long.class);
-        aliases.put("firstName", String.class);
-        aliases.put("lastName", String.class);
-        aliases.put("birthdate", String.class);
-
-        XStreamMarshaller xStreamMarshaller = new XStreamMarshaller();
-        xStreamMarshaller.setAliases(aliases);
-
-        return xStreamMarshaller;
     }
 
 
