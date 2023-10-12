@@ -6,9 +6,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.integration.async.AsyncItemProcessor;
-import org.springframework.batch.integration.async.AsyncItemWriter;
-import org.springframework.batch.item.*;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
@@ -16,7 +14,8 @@ import org.springframework.batch.item.database.Order;
 import org.springframework.batch.item.database.support.MySqlPagingQueryProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
@@ -24,7 +23,7 @@ import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
-public class AsyncConfiguration {
+public class MultiThreadStepConfiguration {
 
     private final DataSource dataSource;
 
@@ -36,8 +35,7 @@ public class AsyncConfiguration {
     public Job batchJob() throws Exception {
         return this.jobBuilderFactory.get("batchJob")
                 .incrementer(new RunIdIncrementer())
-                // .start(step())
-                .start(asyncStep())
+                .start(step())
                 .listener(new StopWatchJobListener())
                 .build();
     }
@@ -47,56 +45,30 @@ public class AsyncConfiguration {
         return stepBuilderFactory.get("step")
                 .<Customer, Customer>chunk(100)
                 .reader(pagingItemReader())
-                .processor(customItemProcessor())
+                .listener(new CustomItemReadListener())
+                .processor((ItemProcessor<Customer, Customer>) item -> item)
+                .listener(new CustomItemProcessListener())
                 .writer(customItemWriter())
+                .listener(new CustomItemWriteListener())
+                .taskExecutor(taskExecutor())
                 .build();
     }
 
     @Bean
-    public ItemProcessor<Customer, Customer> customItemProcessor() throws InterruptedException {
-        return (ItemProcessor<Customer, Customer>) customer -> {
-            Thread.sleep(10);
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(4);
+        taskExecutor.setMaxPoolSize(8);
+        taskExecutor.setThreadNamePrefix("async-thread");
 
-            return new Customer(customer.getId()
-                    , customer.getFirstName().toUpperCase()
-                    , customer.getLastName().toUpperCase()
-                    , customer.getBirthdate());
-        };
-    }
-
-
-    @Bean
-    public Step asyncStep() throws Exception {
-        return stepBuilderFactory.get("asyncStep1")
-                .<Customer, Customer>chunk(100)
-                .reader(pagingItemReader())
-                .processor(asyncItemProcessor())
-                .writer(asyncItemWriter())
-                .build();
-    }
-
-    @Bean
-    public AsyncItemWriter asyncItemWriter() {
-        AsyncItemWriter<Customer> asyncItemWriter = new AsyncItemWriter<>();
-        asyncItemWriter.setDelegate(customItemWriter());
-
-        return asyncItemWriter;
-    }
-
-    @Bean
-    public AsyncItemProcessor asyncItemProcessor() throws InterruptedException {
-        AsyncItemProcessor<Customer, Customer> asyncItemProcessor = new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(customItemProcessor());
-        asyncItemProcessor.setTaskExecutor(new SimpleAsyncTaskExecutor());
-
-        return asyncItemProcessor;
+        return taskExecutor;
     }
 
     @Bean
     public JdbcPagingItemReader<Customer> pagingItemReader() {
         JdbcPagingItemReader<Customer> reader = new JdbcPagingItemReader<>();
         reader.setDataSource(dataSource);
-        reader.setFetchSize(300);
+        reader.setPageSize(100);
         reader.setRowMapper(new CustomRowMapper());
 
         MySqlPagingQueryProvider queryProvider = new MySqlPagingQueryProvider();
