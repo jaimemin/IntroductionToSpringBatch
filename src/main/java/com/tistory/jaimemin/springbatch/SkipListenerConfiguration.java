@@ -9,8 +9,6 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.support.ListItemReader;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,7 +17,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-public class ChunkListenerConfiguration {
+public class SkipListenerConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
 
@@ -34,22 +32,36 @@ public class ChunkListenerConfiguration {
     }
 
     @Bean
-    public Step step() {
+    public Step step() throws Exception {
         return stepBuilderFactory.get("step")
-                .<Integer, String> chunk(10)
-                .listener(new CustomChunkListener())
-                .listener(new CustomItemReadListener())
-                .listener(new CustomItemProcessListener())
-                .listener(new CustomItemWriteListener())
+                .<Integer, String>chunk(10)
                 .reader(listItemReader())
-                .processor((ItemProcessor) item -> {
-//                    throw new RuntimeException();
+                .processor(new ItemProcessor<Integer, String>() {
+                    @Override
+                    public String process(Integer item) throws Exception {
+                        if (item == 4) {
+                            throw new CustomSkipException("process skipped");
+                        }
 
-                    return "item" + item;
+                        return "item" + item;
+                    }
                 })
-                .writer((ItemWriter<String>) items -> {
-                    System.out.println("items = " + items);
+                .writer(new ItemWriter<String>() {
+                    @Override
+                    public void write(List<? extends String> items) throws Exception {
+                        for (String item : items) {
+                            if (item.equals("item5")) {
+                                throw new CustomSkipException("write skipped");
+                            }
+
+                            System.out.println("write : " + item);
+                        }
+                    }
                 })
+                .faultTolerant()
+                .skip(CustomSkipException.class)
+                .skipLimit(2)
+                .listener(new CustomSkipListener())
                 .build();
     }
 
@@ -57,6 +69,6 @@ public class ChunkListenerConfiguration {
     public ItemReader<Integer> listItemReader() {
         List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
-        return new ListItemReader<>(list);
+        return new LinkedListItemReader(list);
     }
 }
